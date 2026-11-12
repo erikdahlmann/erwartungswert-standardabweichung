@@ -316,6 +316,7 @@
     Wahrscheinlichkeiten auf vier Nachkommastellen, \(\sigma\) auf zwei Nachkommastellen. Eingabe als Dezimalzahl (0,2627) oder in Prozent (26,27 %).
   </footer>
 
+<script>if ("scrollRestoration" in history) history.scrollRestoration = "manual"; if (!location.hash) window.scrollTo(0, 0);</script>
 <script src="katex/katex.min.js"></script>
 <script src="katex/auto-render.min.js"></script>
 <script type="module">
@@ -585,9 +586,11 @@
     box.querySelector(".hinweis svg").outerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18M9 6v12"/></svg>`;
     const form = box.querySelector("form"), inp = form.querySelector("input"), tbody = box.querySelector("tbody");
     const zeilen = new Map();
-    function zeile(v) {
+    const wrap = box.querySelector(".probiertab");
+    const hinScrollen = (tr) => { wrap.scrollTop = Math.max(0, tr.offsetTop - wrap.clientHeight / 2); };
+    function zeile(v, zeigen = false) {
       const key = Math.round(v * 1e6);
-      if (zeilen.has(key)) { const tr = zeilen.get(key); tr.classList.remove("neu"); void tr.offsetWidth; tr.classList.add("neu"); tr.scrollIntoView({ block: "nearest" }); return; }
+      if (zeilen.has(key)) { const tr = zeilen.get(key); tr.classList.remove("neu"); void tr.offsetWidth; tr.classList.add("neu"); if (zeigen) hinScrollen(tr); return; }
       const tr = document.createElement("tr");
       tr.dataset.v = v;
       tr.innerHTML = `<td>${istP ? fmtZ(v * 100, 2) + " %" : v}</td>` + pr.spalten.map((s) => `<td>${s.zahl ? fmtZ(s.f(v, B), 2) : fmt(s.f(v, B))}</td>`).join("");
@@ -596,7 +599,7 @@
       tbody.insertBefore(tr, nach || null);
       tr.classList.add("neu");
       setTimeout(() => tr.classList.remove("neu"), 50);
-      tr.scrollIntoView({ block: "nearest" });
+      if (zeigen) hinScrollen(tr);
     }
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();
@@ -605,14 +608,14 @@
       if (z) {
         if (istP) {
           let p = z.prozent ? z.x : z.x >= 1 ? z.x / 100 : z.x;
-          if (p > 0 && p < 1) { zeile(Math.round(p * 1e6) / 1e6); ok = true; }
-        } else if (Number.isInteger(z.x) && z.x >= 1 && z.x <= 3000) { zeile(z.x); ok = true; }
+          if (p > 0 && p < 1) { zeile(Math.round(p * 1e6) / 1e6, true); ok = true; }
+        } else if (Number.isInteger(z.x) && z.x >= 1 && z.x <= 3000) { zeile(z.x, true); ok = true; }
       }
       inp.classList.toggle("fehler", !ok);
       if (ok) inp.select();
     });
-    box.querySelector(".leer").addEventListener("click", () => { tbody.innerHTML = ""; zeilen.clear(); (pr.start || []).forEach(zeile); });
-    (pr.start || []).forEach(zeile);
+    box.querySelector(".leer").addEventListener("click", () => { tbody.innerHTML = ""; zeilen.clear(); (pr.start || []).forEach((v) => zeile(v)); });
+    (pr.start || []).forEach((v) => zeile(v));
   }
 
   /* ───────── Aufgaben aufbauen ───────── */
